@@ -50,7 +50,7 @@ function CheckForUpdate()
         gitVersion.delete("Version")
         gitVersion.close()
     end
-    local download = http.get("https://raw.githubusercontent.com/goldminer127/TurtleOS/main/Version")
+    local download = http.get("https://raw.githubusercontent.com/goldminer127/TurtleOS/master/Version")
     local turtleOS = download.readAll()
     download.close()
     local file = fs.open("Version","w")
@@ -80,7 +80,7 @@ end
 --Update TurtleOS
 function Update()
     print("Downloading files...")
-    local osDownload = http.get("https://raw.githubusercontent.com/goldminer127/TurtleOS/main/TurtleOS.lua")
+    local osDownload = http.get("https://raw.githubusercontent.com/goldminer127/TurtleOS/master/TurtleOS.lua")
     local downloadFile = osDownload.readAll()
     osDownload.close()
 
