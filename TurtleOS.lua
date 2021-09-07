@@ -1,5 +1,5 @@
 --OS Info
-Version = "BETA 0.1.0"
+Version = "BETA 0.1.1"
 
 
 
@@ -24,10 +24,10 @@ end
 --Formats messages to be 30 chars long.
 --Adds spaces between messages
 --Returns string added with spaces
-function Format(string1, string2)
+function Format(string1, string2, numSpaces)
     local spaces = ""
-    if #string1 + #string2 < 36 then
-        local neededSpaces = 36 - (#string1 + #string2)
+    if #string1 + #string2 < numSpaces then
+        local neededSpaces = numSpaces - (#string1 + #string2)
         for addSpaces = 1, neededSpaces do
             spaces = spaces .. " "
         end
@@ -77,6 +77,11 @@ function UpdateVersion()
     --pcall(osVersion.close())
 end
 
+--Make directories for OS
+function MakeDirectories()
+    fs.makeDir("modules")
+end
+
 --Update TurtleOS
 function Update()
     print("Downloading files...")
@@ -93,6 +98,46 @@ function Update()
     sleep(5)
 end
 
+function TurtleHelp()
+    print(Format("help", "reinstall [-r]", 20))
+    print(Format("info", "restart", 20))
+    print(Format("install [-i]", "shutdown", 20))
+    print(Format("modules [-m] [-rm]", "update [-u]", 20))
+end
+
+function SubHelp()
+    print(Format("-dp <program>", "-version optional<module>", 20))
+end
+
+--Removes specified module. Returns result as status message.
+function RemoveModule(module)
+    local modules = fs.list("modules")
+    local result = ""
+    for _, m in ipairs(modules) do
+        if m == module then
+            fs.delete("modules/" .. m)
+            result = "Module " .. m .. " successfully uninstalled."
+            break
+        end
+    end
+    if result == "" then
+        result = "Module " .. m .. " not found."
+    end
+    return result
+end
+
+--List all modules
+function ListModules()
+    local modules = fs.list("modules")
+    local list = ""
+    for _, m in ipairs(modules) do
+        list = list .. m .. "\n"
+    end
+    if list == "" then
+        list = "No modules installed."
+    end
+    return list
+end
 
 --Turtle Commands
 
@@ -113,6 +158,18 @@ end
 function Turtle(input)
     if input[1] == nil then
         print("Use 'turtle help' to view available commands. Use 'turtle help <command> to read about a specific command.")
+    elseif input[1] == "help" then
+        if input[2] == nil then
+            TurtleHelp()
+        elseif (input[2] == "subcommands") or (input[2] == "sub") then
+            SubHelp()
+        end
+    elseif (input[1] == "modules") or (input[1] == "-m") then
+        if input[2] == "list" then
+            print(ListModules())
+        elseif input[2] == "-rm" then
+            RemoveModule(input[3])
+        end
     elseif input[1] == "update" then
         --True = no update, False = new update available
         if CheckForUpdate() == true then
@@ -139,26 +196,27 @@ end
 
 function Startup()
     UpdateVersion()
+    MakeDirectories()
     --Display arbutrary messages for fun. It indicated nothing
     --Loading messages
-    print(Format("Loading OS", "[ OK ]"))
+    print(Format("Loading OS", "[ OK ]", 36))
     sleep(0.25)
-    print(Format("Loading IP", "[ OK ]"))
+    print(Format("Loading IP", "[ OK ]", 36))
     sleep(0.25)
-    print(Format("Loading emotions", "[ FAILED ]"))
+    print(Format("Loading emotions", "[ FAILED ]", 36))
     print("Starting systems...\n")
     --Starting messages
     sleep(2)
-    print(Format("Starting kernal", "[ OK ]"))
+    print(Format("Starting kernal", "[ OK ]", 36))
     sleep(0.25)
-    print(Format("Starting modules", "[ OK ]"))
+    print(Format("Starting modules", "[ OK ]", 36))
     sleep(0.25)
-    print(Format("Starting interface", "[ OK ]"))
+    print(Format("Starting interface", "[ OK ]", 36))
     sleep(0.25)
-    print(Format("Starting other services", "[ OK ]"))
+    print(Format("Starting other services", "[ OK ]", 36))
     sleep(0.25)
-    print(Format("Starting emotions", "[ FAILED ]"))
-    print("\n\nWelcome to TurtleOS. Loading...")
+    print(Format("Starting emotions", "[ FAILED ]", 36))
+    print("\n\nWelcome to TurtleOS", Version, ". Loading...")
     sleep(5)
     shell.run("clear")
     Listener()
