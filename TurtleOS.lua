@@ -1,5 +1,5 @@
 --OS Info
-Version = "BETA 0.1.1"
+Version = "BETA 0.1.0"
 
 
 
@@ -37,6 +37,12 @@ end
 
 --OS Functions
 
+--Restarts the OS **NOT THE TURTLE**
+function Restart()
+    shell.run("clear")
+    shell.run("TurtleOS")
+end
+
 --Check if OS Version file is updated.
 function CheckForUpdate()
     local gitVersion = pcall(fs.open("Version","r"))
@@ -73,26 +79,20 @@ end
 
 --Update TurtleOS
 function Update()
-    local turtleOS = fs.open("TurtleOS","r")
+    print("Downloading files...")
     local osDownload = http.get("https://raw.githubusercontent.com/goldminer127/TurtleOS/main/TurtleOS.lua")
     local downloadFile = osDownload.readAll()
     osDownload.close()
 
-    --Delete old version
-    turtleOS.delete("TurtleOS")
-    turtleOS.close()
-
     --Install new version
-    turtleOS = fs.open("TurtleOS","w")
+    print("Installing files...")
+    local turtleOS = fs.open("TurtleOS","w")
     turtleOS.write(downloadFile)
     turtleOS.close()
+    print("Finalizing...")
+    sleep(5)
 end
 
---Restarts the OS **NOT THE TURTLE**
-function Restart()
-    shell.run("clear")
-    shell.run("TurtleOS")
-end
 
 --Turtle Commands
 
