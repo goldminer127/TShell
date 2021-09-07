@@ -1,5 +1,5 @@
 --OS Info
-Version = "BETA 0.1.0"
+Version = "BETA 0.1.1"
 
 
 
