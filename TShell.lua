@@ -1,4 +1,4 @@
---OS Info
+--Shell Info
 Version = "BETA 0.1.1"
 
 --Available Modules
@@ -36,7 +36,7 @@ function Format(string1, string2, numSpaces)
     return string1 .. spaces .. string2
 end
 
---OS Functions
+--Shell Functions
 
 --Restarts the OS **NOT THE TURTLE**
 function Restart()
@@ -44,14 +44,14 @@ function Restart()
     shell.run("TShell")
 end
 
---Check if OS Version file is updated.
+--Check if Shell Version file is updated.
 function CheckForUpdate()
     local gitVersion = pcall(fs.open("Version","r"))
     if gitVersion == true then
         gitVersion.delete("Version")
         gitVersion.close()
     end
-    local download = http.get("https://raw.githubusercontent.com/goldminer127/TurtleOS/master/Version")
+    local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/Version")
     local isUpToDate = download.readAll() == Version
     download.close()
     --Returns true if there is no update. Returns false if there is an update
@@ -60,12 +60,12 @@ end
 
 --Store initial version or store new version after update
 function UpdateVersion()
-    local osVersion = pcall(fs.open("TerminalVersion","r"))
-    if osVersion == true then
-        osVersion.delete("TerminalVersion")
-        osVersion.close()
+    local shellVersion = pcall(fs.open("ShellVersion","r"))
+    if shellVersion == true then
+        shellVersion.delete("ShellVersion")
+        shellVersion.close()
     end
-    local versionFile = fs.open("TerminalVersion","w")
+    local versionFile = fs.open("ShellVersion","w")
     versionFile.write(Version)
     versionFile.close()
     --pcall(osVersion.close())
@@ -76,18 +76,18 @@ function MakeDirectories()
     fs.makeDir("modules")
 end
 
---Update TurtleOS
+--Update TShell
 function Update()
     print("Downloading files...")
-    local osDownload = http.get("https://raw.githubusercontent.com/goldminer127/TurtleOS/master/TurtleOS.lua")
-    local downloadFile = osDownload.readAll()
-    osDownload.close()
+    local shellDownload = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/TShell.lua")
+    local downloadFile = shellDownload.readAll()
+    shellDownload.close()
 
     --Install new version
     print("Installing files...")
-    local turtleOS = fs.open("TShell","w")
-    turtleOS.write(downloadFile)
-    turtleOS.close()
+    local turtleShell = fs.open("TShell","w")
+    turtleShell.write(downloadFile)
+    turtleShell.close()
     print("Finalizing...")
     sleep(5)
 end
@@ -123,16 +123,17 @@ function Update(moduleFile, downloadLink)
     return "Update successful."
 end
 
-function InstallModule(downloadLink)
-    if module == "farming" then
-        local download = http.get(downloadLink)
-        local versionDownload = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farmingversion")
-        local moduleCode = download.readAll()
-        download.close()
-        local moduleFile = fs.open("farming", "w")
-        moduleFile.write(moduleCode)
-        moduleFile.close()
-    end
+function InstallModule(downloadLink, fileName)
+    print("Downloading", fileName, "module...")
+    local download = http.get(downloadLink)
+    local versionDownload = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farmingversion")
+    local moduleCode = download.readAll()
+    download.close()
+    print("Download complete.\nInstalling module...")
+    local moduleFile = fs.open(filename, "w")
+    moduleFile.write(moduleCode)
+    moduleFile.close()
+    print("Module successfully installed.")
 end
 
 --Update module
@@ -183,11 +184,13 @@ function Install(input)
             local response = read()
             print("Confirm installation (y/n)")
             if response == "y" then
-                InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farming.lua")
+                InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farming.lua", "farming")
+                break
             elseif response == "n" then
-                print("Installation cancelled")
+                print("Installation cancelled.")
+                break
             else
-                print("Invalid input")
+                print("Invalid input.")
             end
         end
     end
@@ -249,8 +252,10 @@ function Turtle(input)
                 if response == "y" then
                     Update()
                     Restart()
+                    break
                 elseif response == "n" then
                     print("Update postponed")
+                    break
                 else
                     print("Invalid input")
                 end
@@ -268,24 +273,24 @@ function Startup()
     MakeDirectories()
     --Display arbutrary messages for fun. It indicated nothing
     --Loading messages
-    print(Format("Loading OS", "[ OK ]", 36))
-    sleep(0.25)
+    print(Format("Loading Shell", "[ OK ]", 36))
+    sleep(0.5)
     print(Format("Loading IP", "[ OK ]", 36))
-    sleep(0.25)
+    sleep(0.10)
     print(Format("Loading emotions", "[ FAILED ]", 36))
     print("Starting systems...\n")
     --Starting messages
     sleep(2)
-    print(Format("Starting kernal", "[ OK ]", 36))
+    print(Format("Starting listener", "[ OK ]", 36))
     sleep(0.25)
     print(Format("Starting modules", "[ OK ]", 36))
-    sleep(0.25)
+    sleep(1)
     print(Format("Starting interface", "[ OK ]", 36))
     sleep(0.25)
     print(Format("Starting other services", "[ OK ]", 36))
-    sleep(0.25)
+    sleep(0.1)
     print(Format("Starting emotions", "[ FAILED ]", 36))
-    print("\n\nWelcome to TurtleOS", Version, ". Loading...")
+    print("\n\nWelcome to TShell", Version, "Loading...")
     sleep(5)
     shell.run("clear")
     Listener()
