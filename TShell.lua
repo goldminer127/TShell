@@ -123,14 +123,14 @@ function Update(moduleFile, downloadLink)
     return "Update successful."
 end
 
-function InstallModule(downloadLink, fileName)
-    print("Downloading", fileName, "module...")
+function InstallModule(downloadLink, input)
+    print("Downloading", input[2], "module...")
     local download = http.get(downloadLink)
     local versionDownload = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farmingversion")
     local moduleCode = download.readAll()
     download.close()
     print("Download complete.\nInstalling module...")
-    local moduleFile = fs.open(filename, "w")
+    local moduleFile = fs.open("modules/" .. input[2], "w")
     moduleFile.write(moduleCode)
     moduleFile.close()
     print("Module successfully installed.")
@@ -177,14 +177,14 @@ end
 
 function Install(input)
     --Install farming module
-    if input[1] == "farming" then
+    if input[2] == "farming" then
         print("Fetching farming module...")
         --loop until valid input
         while true do
-            local response = read()
             print("Confirm installation (y/n)")
+            local response = read()
             if response == "y" then
-                InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farming.lua", "farming")
+                InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farming.lua", input)
                 break
             elseif response == "n" then
                 print("Installation cancelled.")
@@ -208,12 +208,13 @@ function Listener()
             Turtle(input)
         --farming module commands
         elseif prefix == "farming" then
-            local farmingModule = require("modules/farming")
-            if farmingModule == nil then
+            local farmingExists = pcall(require, "modules/farming")
+            if farmingExists == false then
                 print("Farming module not installed.\nRun 'turtle -i farming' to install the required module.")
             else
+                local farming = require("modules/farming")
                 --farming functions and commands found in farming.lua
-                farmingModule.Interpreter()
+                farming.Interpreter(input)
             end
         end
     end
@@ -231,6 +232,8 @@ function Turtle(input)
             SubHelp()
         end
     --Modules
+    elseif (input[1] == "install") or (input[1] == "-i") then
+        Install(input)
     elseif (input[1] == "modules") or (input[1] == "-m") then
         if input[2] == "list" then
             print(ListModules())
