@@ -7,7 +7,7 @@ IsStable = false
 
 --Returns string (version)
 function farming.PrintVersion()
-    print(Version)
+    print("Farming TShell" .. Version)
 end
 
 --Returns bool
@@ -47,7 +47,7 @@ end
 
 function farming.Interpreter(input)
     if input[1] == "-version" then
-        print("Farming",PrintVersion())
+        print(farming.PrintVersion())
     --elseif input[1].count == 2 then
         
     end
