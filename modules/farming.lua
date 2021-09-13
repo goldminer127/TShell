@@ -4,7 +4,7 @@ IsStable = false
 
 --Returns string (version)
 function GetVersion()
-    return Version
+    print("test")
 end
 
 --Returns bool
@@ -44,8 +44,8 @@ end
 
 function Interpreter(input)
     if input[1] == "-version" then
-        print("Farming",Version)
-    elseif input[1].count == 2 then
+        print("Farming",GetVersion())
+    --elseif input[1].count == 2 then
         
     end
 end
