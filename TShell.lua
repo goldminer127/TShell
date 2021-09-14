@@ -1,5 +1,5 @@
 --Shell Info
-Version = "BETA 0.1.1"
+Version = "BETA 0.1.2"
 
 --Available Modules
 AvailableModules = {"attacking", "farming", "mining", "timber"}
@@ -196,16 +196,84 @@ function Install(input)
     end
 end
 
+--Turtle commands
+function Help(input)
+    if input[2] == nil then
+        TurtleHelp()
+    elseif (input[2] == "subcommands") or (input[2] == "sub") then
+        SubHelp()
+    end
+end
+
+function ModulesCommands(input)
+    if input[2] == "list" then
+        print(ListModules())
+    elseif input[2] == "-rm" then
+        print(RemoveModule(input[3]))
+    end
+end
+
+function Update(input)
+    --True = no update, False = new update available
+    if CheckForUpdate() == true then
+        print("Shell is up to date")
+    else
+        local newVersionFile = fs.open("Version","r")
+        local newVersionNum = newVersionFile.readAll()
+        newVersionFile.close()
+        print("TShell", newVersionNum, "is available.\nUpdate will require a restart.\nReady to update? (y/n)")
+        while(true) do
+            local response = read()
+            if response == "y" then
+                Update()
+                Restart()
+                break
+            elseif response == "n" then
+                print("Update postponed")
+                break
+            else
+                print("Invalid input")
+            end
+        end
+    end
+end
+
+function Turtle(input)
+    if input[1] == nil then
+        print("Use 'turtle help' to view available commands. Use 'turtle help <command> to read about a specific command.")
+    --Help
+    elseif input[1] == "help" then
+        Help(input)
+    --Modules install
+    elseif (input[1] == "install") or (input[1] == "-i") then
+        Install(input)
+    --Modules
+    elseif (input[1] == "modules") or (input[1] == "-m") then
+        ModulesCommands(input)
+    --Update
+    elseif input[1] == "update" then
+        Update(input)
+    elseif input[1] == "restart" then
+        Restart()
+    elseif input[1] == "shutdown" then
+        return false
+    end
+    --Continues loop if shutdown command is not used
+    return true
+end
+
+
 --Listens for input from the user. Determins what to do with prefixes from the user
 function Listener()
-    while true do
+    local loop = true
+    while loop do
         term.write("> ")
         local input = Split(read(),' ')
         local prefix = input[1]
         table.remove(input, 1)
         --Default turtle commands
         if prefix == "turtle" then
-            Turtle(input)
+            loop = Turtle(input)
         --farming module commands
         elseif prefix == "farming" then
             local farmingExists = pcall(require, "modules/farming")
@@ -220,54 +288,6 @@ function Listener()
     end
 end
 
---Turtle commands
-function Turtle(input)
-    if input[1] == nil then
-        print("Use 'turtle help' to view available commands. Use 'turtle help <command> to read about a specific command.")
-    --Help
-    elseif input[1] == "help" then
-        if input[2] == nil then
-            TurtleHelp()
-        elseif (input[2] == "subcommands") or (input[2] == "sub") then
-            SubHelp()
-        end
-    --Modules
-    elseif (input[1] == "install") or (input[1] == "-i") then
-        Install(input)
-    elseif (input[1] == "modules") or (input[1] == "-m") then
-        if input[2] == "list" then
-            print(ListModules())
-        elseif input[2] == "-rm" then
-            print(RemoveModule(input[3]))
-        end
-    --Update
-    elseif input[1] == "update" then
-        --True = no update, False = new update available
-        if CheckForUpdate() == true then
-            print("OS is up to date")
-        else
-            local newVersionFile = fs.open("Version","r")
-            local newVersionNum = newVersionFile.readAll()
-            newVersionFile.close()
-            print("OS", newVersionNum, "is available.\nUpdate will require a restart.\nReady to update? (y/n)")
-            while(true) do 
-                local response = read()
-                if response == "y" then
-                    Update()
-                    Restart()
-                    break
-                elseif response == "n" then
-                    print("Update postponed")
-                    break
-                else
-                    print("Invalid input")
-                end
-            end
-        end
-    elseif input[1] == "restart" then
-        Restart()
-    end
-end
 
 --Startup stuff
 
