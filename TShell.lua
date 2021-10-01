@@ -1,8 +1,8 @@
 --Shell Info
-Version = "BETA 0.1.2"
+Version = "BETA 0.1.3"
 
 --Available Modules
-AvailableModules = {"attacking", "farming", "mining", "timber"}
+local AvailableModules = {"attacking", "farming", "mining", "timber"}
 
 --General Functions
 
@@ -46,11 +46,7 @@ end
 
 --Check if Shell Version file is updated.
 function CheckForUpdate()
-    local gitVersion = pcall(fs.open("Version","r"))
-    if gitVersion == true then
-        gitVersion.delete("Version")
-        gitVersion.close()
-    end
+    print("Checking for updates...")
     local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/Version")
     local isUpToDate = download.readAll() == Version
     download.close()
@@ -60,11 +56,6 @@ end
 
 --Store initial version or store new version after update
 function UpdateVersion()
-    local shellVersion = pcall(fs.open("ShellVersion","r"))
-    if shellVersion == true then
-        shellVersion.delete("ShellVersion")
-        shellVersion.close()
-    end
     local versionFile = fs.open("ShellVersion","w")
     versionFile.write(Version)
     versionFile.close()
@@ -74,10 +65,11 @@ end
 --Make directories for OS
 function MakeDirectories()
     fs.makeDir("modules")
+    fs.makeDir("programs")
 end
 
 --Update TShell
-function Update()
+function UpdateShell()
     print("Downloading files...")
     local shellDownload = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/TShell.lua")
     local downloadFile = shellDownload.readAll()
@@ -92,41 +84,45 @@ function Update()
     sleep(5)
 end
 
+--Commands for TShell
 function TurtleHelp()
-    print(Format("help", "reinstall [-r]", 36))
+    print(Format("default [-d]", "modules [-m]", 36))
+    print(Format("exit", "reinstall [-r]", 36))
+    print(Format("help", "remove [rm]", 36))
     print(Format("info", "restart", 36))
-    print(Format("install [-i]", "shutdown", 36))
-    print(Format("modules [-m] [-rm, -u]", "update [-u]", 36))
-end
-
-function SubHelp()
-    print(Format("-dp <program>", "-version optional<module>", 20))
+    print(Format("install [-i]", "update [-u]", 36))
 end
 
 --List all modules
 function ListModules()
     local modules = fs.list("modules")
-    local list = ""
+    local list = "Modules:\n"
     for _, m in ipairs(modules) do
         list = list .. m .. "\n"
     end
     if list == "" then
         list = "No modules installed."
     end
-    return list
+    print(list)
 end
 
-function Update(moduleFile, downloadLink)
-    local download = http.get(downloadLink)
-    moduleFile.write(download.readAll())
-    download.close()
-    return "Update successful."
+--List all programs
+function ListPrograms()
+    local programs = fs.list("programs")
+    local list = "Programs:\n"
+    for _, p in ipairs(programs) do
+        list = list .. p .. "\n"
+    end
+    if list == "" then
+        list = "No programs installed."
+    end
+    print(list)
 end
 
+--Installs modules
 function InstallModule(downloadLink, input)
     print("Downloading", input[2], "module...")
     local download = http.get(downloadLink)
-    local versionDownload = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farmingversion")
     local moduleCode = download.readAll()
     download.close()
     print("Download complete.\nInstalling module...")
@@ -136,23 +132,31 @@ function InstallModule(downloadLink, input)
     print("Module successfully installed.")
 end
 
---Update module
-function UpdateModule(module)
-    local exists = pcall(fs.open("modules/" .. module, "w"))
+--Checks if module exists
+function CheckIfModuleExists(module)
+    local moduleFile = pcall(fs.open("modules/" .. module, "w"))
     local result = ""
-    if exists == true then
-        local m = fs.open("modules/" .. module, "w")
-        local version = fs.open("modules/" .. module .. "Version", "r")
-        if module == "farming" then
-            local farming = require("farming")
-            if version == farming.getVersion() then
-                result = "Module up to date."
-            else
-                result = Update(m, "PUT LINK")
-            end
-        end
-        m.close()
-        version.close()
+    if moduleFile == true then
+        UpdateModule(module, moduleFile)
+    else
+        print("Module not found. Use turtle -m list to view all modules.")
+    end
+    moduleFile.close()
+end
+
+--Update module
+function UpdateModule(moduleName, moduleFile)
+    local module = require("modules/" .. moduleName)
+    local version = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. "version")
+    if version.readAll() == module.GetVersion() then
+        return "Module up to date. No changes made."
+    else
+        print("")
+        local download = http.get(downloadLink)
+        moduleFile.write(download.readAll())
+        download.close()
+        moduleFile.close()
+        print("Update successful.")
     end
 end
 
@@ -170,29 +174,123 @@ function RemoveModule(module)
     if result == "" then
         result = "Module " .. module .. " not found."
     end
-    return result
+    print(result)
+end
+
+function InstallProgram(program, token)
+        print("Downloading program...")
+        local download;
+        if token.size == 8 then
+            download = pcall(http.get("https://pastebin.com/raw/" .. token))
+        else
+            download = pcall(http.get(token))
+        end
+        if download == true then
+        print("Download complete. Installing program...")
+        local file = fs.open("programs/" .. program, "w")
+        file.write(download.readAll())
+        file.close()
+        if token ~= nil then
+            print("Saving token...")
+            local linkArchive = fs.open("programs/" .. program .. "Token", "w")
+            linkArchive.write(token)
+            download.close()
+        end
+        print("Program installed successfully.")
+    else
+        print(program, "could not be downloaded.")
+    end
+end
+
+function CheckIfProgramExists(program)
+    local programFile = pcall(fs.open("programs/" .. program, "w"))
+    local result = ""
+    if programFile == true then
+        UpdateModule(program, programFile)
+    else
+        print("Module not found. Use turtle -m list to view all program.")
+    end
+    programFile.close()
+end
+
+--Update non-module programs
+function UpdateProgram(program)
+    print()
 end
 
 --Turtle Commands
 
 function Install(input)
     --Install farming module
-    if input[2] == "farming" then
-        print("Fetching farming module...")
-        --loop until valid input
-        while true do
-            print("Confirm installation (y/n)")
-            local response = read()
-            if response == "y" then
-                InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/farming.lua", input)
+    if input[2] == "-m" then
+        --Test if module exists
+        local exists = false
+        for module, name in pairs(AvailableModules) do
+            if input[3] == name then
+                exists = true
                 break
-            elseif response == "n" then
-                print("Installation cancelled.")
-                break
-            else
-                print("Invalid input.")
             end
         end
+
+        --Installs module if exists, if not tells user that shell compatable module does not exist
+        --provides an alternative command to install non-compatable programs.
+        if exists then
+            local fileExists = pcall("modules/" .. input[3])
+            local response
+            if fileExists then
+                print(input[3] .. "module already exists, do you want to reinstall it? (y/n)")
+                response = read()
+            end
+            if (fileExists ~= true) or (response == "y") then
+                print("Fetching " .. input[3] .. " module...")
+                --loop until valid input
+                while true do
+                    print("Confirm installation (y/n)")
+                    local response = read()
+                    if response == "y" then
+                        InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[3] .. ".lua", input)
+                        break
+                    elseif response == "n" then
+                        print("Installation cancelled.")
+                        break
+                    else
+                        print("Invalid input.")
+                    end
+                end
+            end
+        else
+            print(input[3] .. " is not listed as a module. Use 'turtle -m available' to view all available modules. Use 'turtle -i unsafe <link/code> <name>' to install programs not compatable with TShell.")
+        end
+    --Install unsupported programs. Requires a link or code and name of file.
+    elseif input[2] == "unsafe" then
+        if (input[3] == nil) or (input[4] == nil) then
+            print("Must provide a link/code and file name.")
+        else
+            print("Fetching", input[3] .. "...")
+            local result = pcall(http.get(input[3]))
+            if result then
+                while true do
+                    print(input[3], "is not a supported module. This program might not be accessible by TShell.")
+                    print("Confirm installation (y/n)")
+                    local response = read()
+                    if response == "y" then
+                        InstallProgram(input[4], input[3])
+                        break
+                    elseif response == "n" then
+                        print("Installation cancelled.")
+                        break
+                    else
+                        print("Invalid input.")
+                    end
+                end
+            else
+                print("Unable to download program.")
+            end
+        end
+    elseif input[2] ~= nil then
+        print(input[2], "is not a command.")
+    else
+        print("No command input.")
     end
 end
 
@@ -200,20 +298,76 @@ end
 function Help(input)
     if input[2] == nil then
         TurtleHelp()
-    elseif (input[2] == "subcommands") or (input[2] == "sub") then
-        SubHelp()
+    elseif (input[2] == "default") or (input[2] == "-d") then
+        print("Alias: 'default', '-d'")
+        print("Run a default turtle program.")
+        print("Example: 'turtle default tunnel 10'")
+    elseif (input[2] == "remove") or (input[2] == "rm") then
+        print("Alias: 'remove', 'rm'")
+        print("Remove modules or third party programs.")
+    elseif input[2] == "exit" then
+        print("Alias: 'exit'")
+        print("Exit TShell.")
+    elseif input[2] == "help" then
+        print("Alias: 'help'")
+        print("List available commands or show info about a specific command")
+    elseif input[2] == "info" then
+        print("Alias: 'info'")
+        print("Get information about TShell")
+    elseif (input[2] == "install") or (input[2] == "-i") then
+        print("Alias: 'install', '-i'")
+        print("Install a module or third party program.")
+    elseif (input[2] == "modules") or (input[2] == "-m") then
+        print("Alias: 'modules', '-m'")
+        print("Subcommands: '-u', '-l'")
+        print("Install a module or third party program.")
+        print("-u update a specified module.")
+        print("-l list all available modules.")
+    elseif (input[2] == "reinstall") or (input[2] == "-r") then
+        print("Alias: 'reinstall', '-r'")
+        print("Subcommands: '-m', '-p'")
+        print("-m reinstall a module.")
+        print("-p reinstall a program.")
+        print("Reinstall a module or program.")
+    elseif (input[2] == "remove") or (input[2] == "rm") then
+        print("Alias: 'remove', 'rm'")
+        print("Remove a module or program.")
     end
 end
 
 function ModulesCommands(input)
     if input[2] == "list" then
-        print(ListModules())
+        ListModules()
+        ListPrograms()
     elseif input[2] == "-rm" then
-        print(RemoveModule(input[3]))
+        if input[3] ~= nil then
+            RemoveModule(input[3])
+        else
+            print("Module or program name required.")
+        end
+    elseif input[2] == "update" then
+        if input[3] == "module" then
+            CheckIfModuleExists(input[3])
+        elseif input[3] == "program" then
+            CheckIfProgramExists(input[3])
+        else
+            print("Specify if module or program")
+        end
+    elseif input[2] == "available" then
+        local names = ""
+        for _, name in pairs(AvailableModules) do
+            names = names .. name .. "\n"
+        end
+        print("Available modules to install:")
+        print(names)
+    elseif input[2] ~= nil then
+        print(input[2], "is not a command.")
+    else
+        print("No command input.")
     end
 end
 
-function Update(input)
+function Update()
     --True = no update, False = new update available
     if CheckForUpdate() == true then
         print("Shell is up to date")
@@ -225,7 +379,7 @@ function Update(input)
         while(true) do
             local response = read()
             if response == "y" then
-                Update()
+                UpdateShell()
                 Restart()
                 break
             elseif response == "n" then
@@ -238,9 +392,69 @@ function Update(input)
     end
 end
 
+--Used to reinstall damaged or outdated modules or programs
+function Reinstall(input)
+    local module = pcall(fs.open(input[3], "w"))
+    if module == false then
+        print(input[3], "does not exist.")
+    elseif input[2] == "-m" then
+        print("Are you sure you want to reinstall" .. input[2] .. "? (y/n)")
+        --Loop until a valid response is given.
+        while true do
+            local response = read()
+            if response == "y" then
+                print("Downloading module...")
+                local download = pcall(http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[2] .. ".lua"))
+                if download == true then
+                    print("Installing module...")
+                    module.write(download.readAll())
+                    download.close()
+                    module.close()
+                    print("Module successfully reinstalled.")
+                    break
+                else --If module fails to download
+                    print("Module could not be downloaded.")
+                    break
+                end
+            elseif response == "n" then
+                print("Reinstall cancelled.")
+                break
+            else
+                print("Not a valid input.")
+            end
+        end
+    elseif input[2] == "-p" then
+        while true do
+            local response = read()
+            if response == "y" then
+                local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[2] .. ".lua")
+                module.write(download.readAll())
+                download.close()
+                module.close()
+                break
+            elseif response == "n" then
+                print("Reinstall cancelled.")
+                break
+            else
+                print("Not a valid input.")
+            end
+        end
+    else
+        print("Incorrect inputs. Use 'turtle help reinstall' to view specifications.")
+    end
+end
+
+--[[
+    All TShell commands. Runs the specified command from Listener.
+    Returns true if exit is not called.
+]]
 function Turtle(input)
     if input[1] == nil then
         print("Use 'turtle help' to view available commands. Use 'turtle help <command> to read about a specific command.")
+    --Exit
+    elseif input[1] == "exit" then
+        print("Exiting TShell...")
+        return false
     --Help
     elseif input[1] == "help" then
         Help(input)
@@ -251,14 +465,24 @@ function Turtle(input)
     elseif (input[1] == "modules") or (input[1] == "-m") then
         ModulesCommands(input)
     --Update
-    elseif input[1] == "update" then
-        Update(input)
+    elseif (input[1] == "update") or (input[1] == "-u") then
+        Update()
+    --Reinstall
+    elseif input[1] == "reinstall" then
+        Reinstall(input)
+    --Restart
     elseif input[1] == "restart" then
         Restart()
-    elseif input[1] == "shutdown" then
+    --Exit
+    elseif input[1] == "exit" then
+        print("Closing terminal")
         return false
+    elseif input[1] ~= nil then
+        print(input[1], "is not a command.")
+    else
+        print("No command input.")
     end
-    --Continues loop if shutdown command is not used
+    --Continues loop if exit command is not used
     return true
 end
 
