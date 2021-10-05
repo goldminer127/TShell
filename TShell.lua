@@ -121,12 +121,12 @@ end
 
 --Installs modules
 function InstallModule(downloadLink, input)
-    print("Downloading", input[2], "module...")
+    print("Downloading", input[3], "module...")
     local download = http.get(downloadLink)
     local moduleCode = download.readAll()
     download.close()
     print("Download complete.\nInstalling module...")
-    local moduleFile = fs.open("modules/" .. input[2], "w")
+    local moduleFile = fs.open("modules/" .. input[3], "w")
     moduleFile.write(moduleCode)
     moduleFile.close()
     print("Module successfully installed.")
