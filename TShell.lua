@@ -178,7 +178,7 @@ function RemoveModule(module)
 end
 
 function InstallProgram(program, token)
-        print("Downloading program...")
+        print("Downloading program", program .. "...")
         local download;
         if token.size == 8 then
             download = pcall(http.get("https://pastebin.com/raw/" .. token))
@@ -186,20 +186,20 @@ function InstallProgram(program, token)
             download = pcall(http.get(token))
         end
         if download == true then
-        print("Download complete. Installing program...")
-        local file = fs.open("programs/" .. program, "w")
-        file.write(download.readAll())
-        file.close()
-        if token ~= nil then
-            print("Saving token...")
-            local linkArchive = fs.open("programs/" .. program .. "Token", "w")
-            linkArchive.write(token)
-            download.close()
+            print("Download complete. Installing program...")
+            local file = fs.open("programs/" .. program, "w")
+            file.write(download.readAll())
+            file.close()
+            if token ~= nil then
+                print("Saving token...")
+                local linkArchive = fs.open("programs/" .. program .. "Token", "w")
+                linkArchive.write(token)
+                download.close()
+            end
+            print("Program installed successfully.")
+        else
+            print(program, "could not be downloaded.")
         end
-        print("Program installed successfully.")
-    else
-        print(program, "could not be downloaded.")
-    end
 end
 
 function CheckIfProgramExists(program)
@@ -223,15 +223,18 @@ end
 function Install(input)
     --Install farming module
     if input[2] == "-m" then
-        --Test if module exists
-        local exists = false
-        for module, name in pairs(AvailableModules) do
-            if input[3] == name then
-                exists = true
-                break
+        if input[3] ~= nil then
+            --Test if module exists
+            local exists = false
+            for module, name in pairs(AvailableModules) do
+                if input[3] == name then
+                    exists = true
+                    break
+                end
             end
+        else
+            print("Must provide a module name.")
         end
-
         --Installs module if exists, if not tells user that shell compatable module does not exist
         --provides an alternative command to install non-compatable programs.
         if exists then
@@ -266,25 +269,19 @@ function Install(input)
         if (input[3] == nil) or (input[4] == nil) then
             print("Must provide a link/code and file name.")
         else
-            print("Fetching", input[3] .. "...")
-            local result = pcall(http.get(input[3]))
-            if result then
-                while true do
-                    print(input[3], "is not a supported module. This program might not be accessible by TShell.")
-                    print("Confirm installation (y/n)")
-                    local response = read()
-                    if response == "y" then
-                        InstallProgram(input[4], input[3])
-                        break
-                    elseif response == "n" then
-                        print("Installation cancelled.")
-                        break
-                    else
-                        print("Invalid input.")
-                    end
+            while true do
+                print(input[3], "is not a supported module. This program might not be accessible by TShell.")
+                print("Confirm installation (y/n)")
+                local response = read()
+                if response == "y" then
+                    InstallProgram(input[4], input[3])
+                    break
+                elseif response == "n" then
+                    print("Installation cancelled.")
+                    break
+                else
+                    print("Invalid input.")
                 end
-            else
-                print("Unable to download program.")
             end
         end
     elseif input[2] ~= nil then
@@ -372,7 +369,7 @@ function Update()
     if CheckForUpdate() == true then
         print("Shell is up to date")
     else
-        local newVersionFile = fs.open("Version","r")
+        local newVersionFile = fs.open("ShellVersion","r")
         local newVersionNum = newVersionFile.readAll()
         newVersionFile.close()
         print("TShell", newVersionNum, "is available.\nUpdate will require a restart.\nReady to update? (y/n)")
