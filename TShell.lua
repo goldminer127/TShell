@@ -270,7 +270,7 @@ function Install(input)
             print("Must provide a link/code and file name.")
         else
             while true do
-                print(input[3], "is not a supported module. This program might not be accessible by TShell.")
+                print(input[4], "is not a supported module. This program might not be accessible by TShell.")
                 print("Confirm installation (y/n)")
                 local response = read()
                 if response == "y" then
