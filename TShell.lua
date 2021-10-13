@@ -1,5 +1,5 @@
 --Shell Info
-Version = "BETA 0.1.4"
+Version = "BETA 0.1.5"
 
 --Available Modules
 local AvailableModules = {"attacking", "farming", "mining", "timber"}
@@ -156,7 +156,7 @@ function UpdateModule(moduleName)
     else
         local moduleFile = fs.open("modules/" .. moduleName, "w")
         print("")
-        local download = http.get(downloadLink)
+        local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. ".lua")
         moduleFile.write(download.readAll())
         download.close()
         moduleFile.close()
@@ -256,7 +256,6 @@ function UpdateProgram(program)
         local response = read()
         if response == "cancel" then
             print("Canceling update...")
-            loop = false
         else
             tokenfile = fs.open("programs/" .. program .. "Token", "w")
             token = response
