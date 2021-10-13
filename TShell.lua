@@ -1,5 +1,5 @@
 --Shell Info
-Version = "BETA 0.1.5"
+Version = "BETA 0.1.6"
 
 --Available Modules
 local AvailableModules = {"attacking", "farming", "mining", "timber"}
@@ -125,12 +125,12 @@ end
 
 --Installs modules
 function InstallModule(downloadLink, input)
-    print("Downloading", input[3], "module...")
+    print("Downloading", input[4], "module...")
     local download = http.get(downloadLink)
     local moduleCode = download.readAll()
     download.close()
     print("Download complete.\nInstalling module...")
-    local moduleFile = fs.open("modules/" .. input[3], "w")
+    local moduleFile = fs.open("modules/" .. input[4], "w")
     moduleFile.write(moduleCode)
     moduleFile.close()
     print("Module successfully installed.")
@@ -155,12 +155,12 @@ function UpdateModule(moduleName)
     if version == module.GetVersion() then
         print("Module up to date. No changes made.")
     else
-        local moduleFile = fs.open("modules/" .. moduleName, "w")
         print(moduleName,"version",version,"is available. A restart will be required. Do you want to update this module? (y/n)")
         local loop = true
         while loop do
             local response = read()
             if response == "y" then
+                local moduleFile = fs.open("modules/" .. moduleName, "w")
                 local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. ".lua")
                 moduleFile.write(download.readAll())
                 download.close()
@@ -596,11 +596,10 @@ function Listener()
             loop = Turtle(input)
         --farming module commands
         elseif prefix == "farming" then
-            local farmingExists = require("modules/farming")
-            if farmingExists == nil then
+            local farmingExists,farming = pcall(require("modules/farming"))
+            if farmingExists == false then
                 print("Farming module not installed.\nRun 'turtle -i -m farming' to install the required module.")
             else
-                local farming = require("modules/farming")
                 --farming functions and commands found in farming.lua
                 farming.Interpreter(input)
             end
