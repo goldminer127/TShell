@@ -150,18 +150,33 @@ end
 --Update module
 function UpdateModule(moduleName)
     local module = require("modules/" .. moduleName)
-    local version = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. "version")
-    if version.readAll() == module.GetVersion() then
+    local versiondownload = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. "version")
+    local version = versiondownload.readAll()
+    if version == module.GetVersion() then
         print("Module up to date. No changes made.")
     else
         local moduleFile = fs.open("modules/" .. moduleName, "w")
-        print("")
-        local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. ".lua")
-        moduleFile.write(download.readAll())
-        download.close()
-        moduleFile.close()
-        print("Update successful.")
+        print(moduleName,"version",version,"is available. A restart will be required. Do you want to update this module? (y/n)")
+        local loop = true
+        while loop do
+            local response = read()
+            if response == "y" then
+                local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. ".lua")
+                moduleFile.write(download.readAll())
+                download.close()
+                moduleFile.close()
+                print("Update successful.")
+                print("Restarting...")
+                Restart()
+            elseif response == "n" then
+                print("Update postponed.")
+                loop = false
+            else
+                print("Invalid response. Try again.")
+            end
+        end
     end
+    versiondownload.close()
 end
 
 --Removes specified module. Returns result as status message.
@@ -211,7 +226,7 @@ function InstallProgram(program, token)
                     doinstall = false
                     break
                 else
-                    print("Invalid input.")
+                    print("Invalid response. Try again.")
                 end
             end
         end
@@ -319,7 +334,7 @@ function Install(input)
                         print("Installation cancelled.")
                         break
                     else
-                        print("Invalid input.")
+                        print("Invalid response. Try again.")
                     end
                 end
             else
@@ -345,7 +360,7 @@ function Install(input)
                     print("Installation cancelled.")
                     break
                 else
-                    print("Invalid input.")
+                    print("Invalid response. Try again.")
                 end
             end
         end
