@@ -1,5 +1,5 @@
 --Shell Info
-Version = "BETA 0.1.3"
+Version = "BETA 0.1.4"
 
 --Available Modules
 local AvailableModules = {"attacking", "farming", "mining", "timber"}
@@ -48,10 +48,14 @@ end
 function CheckForUpdate()
     print("Checking for updates...")
     local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/Version")
-    local isUpToDate = download.readAll() == Version
+    local versionnum = download.readAll()
+    local isupToDate = versionnum == Version
+    local versionfile = fs.open("ShellVersion","w")
+    versionfile.write(versionnum)
+    versionfile.close()
     download.close()
     --Returns true if there is no update. Returns false if there is an update
-    return isUpToDate
+    return isupToDate
 end
 
 --Store initial version or store new version after update
@@ -134,23 +138,23 @@ end
 
 --Checks if module exists
 function CheckIfModuleExists(module)
-    local moduleFile = pcall(fs.open("modules/" .. module, "w"))
-    local result = ""
-    if moduleFile == true then
-        UpdateModule(module, moduleFile)
+    local moduleFile = fs.open("modules/" .. module, "r")
+    if moduleFile ~= nil then
+        UpdateModule(module)
+        moduleFile.close()
     else
         print("Module not found. Use turtle -m list to view all modules.")
     end
-    moduleFile.close()
 end
 
 --Update module
-function UpdateModule(moduleName, moduleFile)
+function UpdateModule(moduleName)
     local module = require("modules/" .. moduleName)
     local version = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. "version")
     if version.readAll() == module.GetVersion() then
-        return "Module up to date. No changes made."
+        print("Module up to date. No changes made.")
     else
+        local moduleFile = fs.open("modules/" .. moduleName, "w")
         print("")
         local download = http.get(downloadLink)
         moduleFile.write(download.readAll())
@@ -180,12 +184,39 @@ end
 function InstallProgram(program, token)
         print("Downloading program", program .. "...")
         local download;
-        if token.size == 8 then
-            download = pcall(http.get("https://pastebin.com/raw/" .. token))
+        local doinstall = true;
+        if #token == 8 then
+            download = http.get("https://pastebin.com/raw/" .. token)
+        elseif string.match(token, "/blob") and string.match(token, "github.com") then
+            local gfront, gback = string.find(token, "github.com")
+            local bfront, bback = string.find(token, "/blob")
+            local str1 = string.sub(token, 0, gfront - 1)
+            local str2 = string.sub(token, gback + 1, bfront - 1)
+            local str3 = string.sub(token, bback + 1, #token)
+            token = str1 .. "raw.githubusercontent.com" .. str2 .. str3
+            download = http.get(token)
         else
-            download = pcall(http.get(token))
+            download = http.get(token)
         end
-        if download == true then
+
+        --Test if program exists
+        if fs.open("programs/" .. program, "r") ~= nil then
+            print("Program",program,"already exists, do you want to reinstall it? (y/n)")
+            while true do
+                local response = read()
+                if response == "y" then
+                    --Keep doinstall true
+                    break
+                elseif response == "n" then
+                    doinstall = false
+                    break
+                else
+                    print("Invalid input.")
+                end
+            end
+        end
+                
+        if download ~= nil and doinstall == true then
             print("Download complete. Installing program...")
             local file = fs.open("programs/" .. program, "w")
             file.write(download.readAll())
@@ -194,38 +225,70 @@ function InstallProgram(program, token)
                 print("Saving token...")
                 local linkArchive = fs.open("programs/" .. program .. "Token", "w")
                 linkArchive.write(token)
+                linkArchive.close()
                 download.close()
             end
             print("Program installed successfully.")
+        elseif doinstall == false then
+            print("Installation cancelled")
         else
             print(program, "could not be downloaded.")
         end
 end
 
 function CheckIfProgramExists(program)
-    local programFile = pcall(fs.open("programs/" .. program, "w"))
-    local result = ""
-    if programFile == true then
-        UpdateModule(program, programFile)
+    local programFile = fs.open("programs/" .. program, "r")
+    if programFile ~= nil then
+        UpdateProgram(program)
+        programFile.close()
     else
-        print("Module not found. Use turtle -m list to view all program.")
+        print("Program not found. Use turtle -m list to view all program.")
     end
-    programFile.close()
 end
 
 --Update non-module programs
 function UpdateProgram(program)
-    print()
+    local tokenfile = fs.open("programs/" .. program .. "Token", "r")
+    local token
+    print("Could not check", program, "version. Updating program...")
+    if tokenfile == nil then
+        print("Program link/code not found, please input link/code. Type \"cancel\" to cancel update.")
+        local response = read()
+        if response == "cancel" then
+            print("Canceling update...")
+            loop = false
+        else
+            tokenfile = fs.open("programs/" .. program .. "Token", "w")
+            token = response
+            tokenfile.write(token)
+            tokenfile.close()
+        end
+    else
+        token = tokenfile.readAll()
+        tokenfile.close()
+    end
+    if token ~= nil then
+        local programFile = fs.open("programs/" .. program, "w")
+        local download = http.get(token)
+        if download ~= nil then
+            programFile.write(download.readAll())
+            download.close()
+            programFile.close()
+            print("Update successful.")
+        else
+            print("Update failed, could not download program files. Possibly provided with invalid link/code.")
+        end
+    end
 end
 
 --Turtle Commands
 
 function Install(input)
+    local exists = false
     --Install farming module
     if input[2] == "-m" then
         if input[3] ~= nil then
             --Test if module exists
-            local exists = false
             for module, name in pairs(AvailableModules) do
                 if input[3] == name then
                     exists = true
@@ -238,13 +301,13 @@ function Install(input)
         --Installs module if exists, if not tells user that shell compatable module does not exist
         --provides an alternative command to install non-compatable programs.
         if exists then
-            local fileExists = pcall("modules/" .. input[3])
+            local fileExists = fs.open("modules/" .. input[3], "r")
             local response
-            if fileExists then
-                print(input[3] .. "module already exists, do you want to reinstall it? (y/n)")
+            if fileExists ~= nil then
+                print(input[3],"module already exists, do you want to reinstall it? (y/n)")
                 response = read()
             end
-            if (fileExists ~= true) or (response == "y") then
+            if (fileExists == nil) or (response == "y") then
                 print("Fetching " .. input[3] .. " module...")
                 --loop until valid input
                 while true do
@@ -260,7 +323,10 @@ function Install(input)
                         print("Invalid input.")
                     end
                 end
+            else
+                print("Installation cancelled.")
             end
+            fileExists.close()
         else
             print(input[3] .. " is not listed as a module. Use 'turtle -m available' to view all available modules. Use 'turtle -i unsafe <link/code> <name>' to install programs not compatable with TShell.")
         end
@@ -299,9 +365,6 @@ function Help(input)
         print("Alias: 'default', '-d'")
         print("Run a default turtle program.")
         print("Example: 'turtle default tunnel 10'")
-    elseif (input[2] == "remove") or (input[2] == "rm") then
-        print("Alias: 'remove', 'rm'")
-        print("Remove modules or third party programs.")
     elseif input[2] == "exit" then
         print("Alias: 'exit'")
         print("Exit TShell.")
@@ -328,7 +391,15 @@ function Help(input)
         print("Reinstall a module or program.")
     elseif (input[2] == "remove") or (input[2] == "rm") then
         print("Alias: 'remove', 'rm'")
-        print("Remove a module or program.")
+        print("Remove modules or third party programs.")
+    elseif input[2] == "restart" then
+        print("Alias: 'restart'")
+        print("Restarts TShell.")
+    elseif input[2] == "update" then
+        print("Alias: 'update'")
+        print("Updates TShell if there is a new update available.")
+    else
+        print("Command not found.")
     end
 end
 
@@ -344,9 +415,9 @@ function ModulesCommands(input)
         end
     elseif input[2] == "update" then
         if input[3] == "module" then
-            CheckIfModuleExists(input[3])
+            CheckIfModuleExists(input[4])
         elseif input[3] == "program" then
-            CheckIfProgramExists(input[3])
+            CheckIfProgramExists(input[4])
         else
             print("Specify if module or program")
         end
@@ -381,6 +452,9 @@ function Update()
                 break
             elseif response == "n" then
                 print("Update postponed")
+                newVersionFile = fs.open("ShellVersion","w")
+                newVersionFile.write(Version)
+                newVersionFile.close()
                 break
             else
                 print("Invalid input")
@@ -391,8 +465,8 @@ end
 
 --Used to reinstall damaged or outdated modules or programs
 function Reinstall(input)
-    local module = pcall(fs.open(input[3], "w"))
-    if module == false then
+    local module = fs.open(input[3], "w")
+    if module ~= nil then
         print(input[3], "does not exist.")
     elseif input[2] == "-m" then
         print("Are you sure you want to reinstall" .. input[2] .. "? (y/n)")
@@ -401,8 +475,8 @@ function Reinstall(input)
             local response = read()
             if response == "y" then
                 print("Downloading module...")
-                local download = pcall(http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[2] .. ".lua"))
-                if download == true then
+                local download = http.get("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[2] .. ".lua")
+                if download ~= nil then
                     print("Installing module...")
                     module.write(download.readAll())
                     download.close()
@@ -448,6 +522,13 @@ end
 function Turtle(input)
     if input[1] == nil then
         print("Use 'turtle help' to view available commands. Use 'turtle help <command> to read about a specific command.")
+    --Default programs
+    elseif input[1] == "default" then
+        local command = ""
+        for x = 2,#input,1 do
+            command = command .. " " .. input[x]
+        end
+        shell.run(command)
     --Exit
     elseif input[1] == "exit" then
         print("Exiting TShell...")
@@ -456,6 +537,10 @@ function Turtle(input)
     elseif input[1] == "help" then
         Help(input)
     --Modules install
+    elseif input[1] == "info" then
+        print("TShell Version:", Version)
+        print("Created by goldminer127")
+        print("Github: https://github.com/goldminer127")
     elseif (input[1] == "install") or (input[1] == "-i") then
         Install(input)
     --Modules
@@ -497,14 +582,16 @@ function Listener()
             loop = Turtle(input)
         --farming module commands
         elseif prefix == "farming" then
-            local farmingExists = pcall(require, "modules/farming")
-            if farmingExists == false then
-                print("Farming module not installed.\nRun 'turtle -i farming' to install the required module.")
+            local farmingExists = require("modules/farming")
+            if farmingExists == nil then
+                print("Farming module not installed.\nRun 'turtle -i -m farming' to install the required module.")
             else
                 local farming = require("modules/farming")
                 --farming functions and commands found in farming.lua
                 farming.Interpreter(input)
             end
+        else
+            print("Invalid syntax")
         end
     end
 end
