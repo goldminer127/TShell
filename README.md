@@ -1,22 +1,22 @@
 # TShell BETA 0.1.7
 ### Disclaimer: TShell is currently in development and is in BETA stage. There may be limited functionality and plenty of bugs. If you encounter any bugs or have any suggestions please make an issue!
 
-Do you hate it when you want a turtle to do something, but have to manually code in a program to do the simplest of things? Do you you hate spending long nights debugging code for a minecraft turtle when you could be doing other things? Do you even know how to code? Well do not fear! TShell is here to satisfy your basic turtle needs. It comes with a bunch of modules packed with commands to make your life with turtles easier! If you are already familiar with TShell and just want to skip to how to get it, [press here!](##installation)
+Do you hate it when you want a turtle to do something, but have to manually code in a program to do the simplest of things? Do you you hate spending long nights debugging code for a minecraft turtle when you could be doing other things? Do you even know how to code? Well do not fear! TShell is here to satisfy your basic turtle needs. It comes with a bunch of modules packed with commands to make your life with turtles easier! If you are already familiar with TShell and just want to skip to how to get it, [press here!](#installation)
 ## TShell Commands
 TShell itself comes with some commands. Modules must be downloaded using the command install. Check out more information about modules [here.](https://github.com/goldminer127/TShell/tree/master/modules)
 
 Syntax for TShell is "turtle". You must have "turtle" before every command to use TShell commands.
 List of current commands:
-* [default](######default)
-* [exit](######exit)
-* [help](######help)
-* [info](######info)
-* [install](######install)
-* [modules](######modules)
-* [reinstall](######reinstall)
-* [remove](######remove)
-* [restart](######restart)
-* [update](######update)
+* [default](#default)
+* [exit](#exit)
+* [help](#help)
+* [info](#info)
+* [install](#install)
+* [modules](#modules)
+* [reinstall](#reinstall)
+* [remove](#remove)
+* [restart](#restart)
+* [update](#update)
 
 ###### default
 Shortcut: -d
