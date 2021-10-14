@@ -18,31 +18,31 @@ List of current commands:
 * [restart](#restart)
 * [update](#update)
 
-###### default
+### default
 Shortcut: -d\
 Usage: default \<program/command>\
 Allows you to use default programs/commands provided by computercraft by default.\
-Example: 'turtle default tunnel 10'\
+Example: 'turtle default tunnel 10'
 
-###### exit
-Exits TShell to default turtle mode.\
+### exit
+Exits TShell to default turtle mode.
 
-###### help
+### help
 Usage: help \[command\]\
-Displays all available TShell commands or displays more information about the specified command.\
+Displays all available TShell commands or displays more information about the specified command.
 
-###### info
-Gets information about your current TShell version.\
+### info
+Gets information about your current TShell version.
 
-###### install
+### install
 Shortcut: -i\
 Usage: install \<mode> \<modulename/programlink> \<filename>\
 Modes: -m (module), unsafe (install unsupported programs)\
 Installs modules or unsupported programs into TShell. __modulename__ is needed if -m is specified, __programlink__ and __filename__ is needed if unsafe is specified.\
 Examples: 'turtle install -m farming'\
-          'turtle install unsafe <link/pastbin code> programname'\
+          'turtle install unsafe <link/pastbin code> programname'
           
-###### modules
+### modules
 Shortcut: -m\
 Usage: modules \<subcommand>\
 Subcommands:
@@ -58,26 +58,26 @@ Subcommands:
   
 Manages modules or programs installed onto TShell.\
 Examples: 'turtle modules update module farming'\
-          'turtle modules -rm farming'\
+          'turtle modules -rm farming'
 
-###### Reinstall
+### Reinstall
 Shortcut: -r\
 Usage: reinstall \<type> \<name>\
 Type: -m (module), -p (program)\
 Reinstalls any module or program.\
-Example: 'turtle reinstall -m farming'\
+Example: 'turtle reinstall -m farming'
 
-###### remove (WIP)
+### remove (WIP)
 Shortcut: rm\
 Usage: remove \<name>\
-Command currently not available.\
+Command currently not available.
 
-###### restart
-Restarts TShell.\
+### restart
+Restarts TShell.
 
-###### update
+### update
 Shortcut: -u\
-Checks if any new TShell updates are available. Updates TShell if there is an available update.\
+Checks if any new TShell updates are available. Updates TShell if there is an available update.
 
 ## Installation
 Turtles from computercraft only allow you to install programs through pastebin. To install TShell use the following command:
