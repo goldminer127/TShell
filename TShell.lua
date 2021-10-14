@@ -1,5 +1,5 @@
 --Shell Info
-Version = "BETA 0.1.6"
+Version = "BETA 0.1.7"
 
 --Available Modules
 local AvailableModules = {"attacking", "farming", "mining", "timber"}
@@ -124,13 +124,13 @@ function ListPrograms()
 end
 
 --Installs modules
-function InstallModule(downloadLink, input)
-    print("Downloading", input[4], "module...")
+function InstallModule(downloadLink, modulename)
+    print("Downloading", modulename, "module...")
     local download = http.get(downloadLink)
     local moduleCode = download.readAll()
     download.close()
     print("Download complete.\nInstalling module...")
-    local moduleFile = fs.open("modules/" .. input[4], "w")
+    local moduleFile = fs.open("modules/" .. modulename, "w")
     moduleFile.write(moduleCode)
     moduleFile.close()
     print("Module successfully installed.")
@@ -320,15 +320,16 @@ function Install(input)
             if fileExists ~= nil then
                 print(input[3],"module already exists, do you want to reinstall it? (y/n)")
                 response = read()
+                fileExists.close()
             end
             if (fileExists == nil) or (response == "y") then
                 print("Fetching " .. input[3] .. " module...")
                 --loop until valid input
                 while true do
                     print("Confirm installation (y/n)")
-                    local response = read()
+                    response = read()
                     if response == "y" then
-                        InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[3] .. ".lua", input)
+                        InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[3] .. ".lua", input[3])
                         break
                     elseif response == "n" then
                         print("Installation cancelled.")
@@ -340,7 +341,6 @@ function Install(input)
             else
                 print("Installation cancelled.")
             end
-            fileExists.close()
         else
             print(input[3] .. " is not listed as a module. Use 'turtle -m available' to view all available modules. Use 'turtle -i unsafe <link/code> <name>' to install programs not compatable with TShell.")
         end
@@ -596,10 +596,11 @@ function Listener()
             loop = Turtle(input)
         --farming module commands
         elseif prefix == "farming" then
-            local farmingExists,farming = pcall(require("modules/farming"))
+            local farmingExists = pcall(require,"modules/farming")
             if farmingExists == false then
                 print("Farming module not installed.\nRun 'turtle -i -m farming' to install the required module.")
             else
+                local farming = require("modules/farming")
                 --farming functions and commands found in farming.lua
                 farming.Interpreter(input)
             end
