@@ -2,7 +2,7 @@
 local farming = {}
 
 --Module info
-Version = "BETA 0.1.2"
+Version = "BETA 0.1.3"
 IsStable = true
 
 --Globals
@@ -162,6 +162,24 @@ function TurtleForward()
     return LoopPath --Return true if can move and if task is still going
 end
 
+function TurtleTurnRight()
+    turtle.turnRight()
+    if Direction == 4 then
+        Direction = 1
+    else
+        Direction = Direction + 1
+    end
+end
+
+function TurtleTurnLeft()
+    turtle.turnLeft()
+    if Direction == 1 then
+        Direction = 4
+    else
+        Direction = Direction - 1
+    end
+end
+
 function CompactItems()
     for slot = 1,16,1 do
         turtle.select(slot)
@@ -179,7 +197,7 @@ end
 
 function TryEmptyChest()
     for x = 1,4,1 do
-        turtle.turnRight()
+        TurtleTurnRight()
         local success,data = turtle.inspect()
         if data.name == "minecraft:chest" then
             for slot = 1,16,1 do
@@ -290,7 +308,7 @@ function ReturnOriginalSquare(x, y)
                 break
             end
         end
-        turtle.turnRight()
+        TurtleTurnRight()
         for row = 1,x,1 do
             if LoopPath ~= false then
                 LoopPath = TurtleForward()
@@ -298,12 +316,12 @@ function ReturnOriginalSquare(x, y)
                 break
             end
         end
-        turtle.turnRight()
+        TurtleTurnRight()
     else
-        turtle.turnRight()
-        turtle.turnRight()
+        TurtleTurnRight()
+        TurtleTurnRight()
         TurtleForward()
-        turtle.turnRight()
+        TurtleTurnRight()
         for row = 1,x,1 do
             if LoopPath ~= false then
                 LoopPath = TurtleForward()
@@ -311,13 +329,84 @@ function ReturnOriginalSquare(x, y)
                 break
             end
         end
-        turtle.turnRight()
+        TurtleTurnRight()
     end
+end
+
+--Return to original position if s is pressed
+function ReturnOnStop(x,y,completedx,completedy)
+    LoopPath = true
+    if Direction == 1 then
+        print(Direction,completedx,y+1)
+        TurtleTurnRight()
+        TurtleTurnRight()
+        for col = 1,completedy,1 do
+            if LoopPath == true then
+                LoopPath = TurtleForward()
+            else
+                break
+            end
+        end
+        TurtleTurnRight()
+        for row = 1,completedx,1 do
+            if LoopPath == true then
+                LoopPath = TurtleForward()
+            else
+                break
+            end
+        end
+    elseif Direction == 2 then
+        print(Direction,completedx,y+1)
+        TurtleTurnRight()
+        if completedx % 2 == 1 then
+            for col = 1,y+1,1 do
+                if LoopPath == true then
+                    LoopPath = TurtleForward()
+                else
+                    break
+                end
+            end
+        else
+            TurtleTurnRight()
+            LoopPath = TurtleForward()
+        end
+        TurtleTurnRight()
+        for row = 1,completedx-1,1 do
+            if LoopPath == true then
+                LoopPath = TurtleForward()
+            else
+                break
+            end
+        end
+    elseif Direction == 3 then
+        print(Direction,y-completedy+1)
+        for col = 1,y-completedy+1,1 do
+            if LoopPath == true then
+                LoopPath = TurtleForward()
+            else
+                break
+            end
+        end
+        TurtleTurnRight()
+        for row = 1,completedx,1 do
+            if LoopPath == true then
+                LoopPath = TurtleForward()
+            else
+                break
+            end
+        end
+    end
+    while Direction ~= 1 do
+        TurtleTurnRight()
+    end
+    TurtleDown()
+    LoopPath = false
 end
 
 function TillSquare(x, y)
     local timerest = 0.5 --seconds
     local originaly = y
+    local completedrow, completedcol = 0,0
     LoopPath = true
     LoopPath = TurtleUp()
     for row = 1,x,1 do
@@ -336,30 +425,34 @@ function TillSquare(x, y)
                     else
                         LoopPath = TurtleForward()
                     end
+                    completedcol = col
                 else
                     break
                 end
             end
-            if row == 1 then
-                y = y - 1
-            end
             if LoopPath == false then
                 break
             elseif row % 2 == 1 then
-                turtle.turnRight()
+                TurtleTurnRight()
+                completedcol = 0
                 DecideCancel(timerest)
                 TurtleTill()
                 LoopPath = TurtleForward()
                 DecideCancel(timerest)
-                turtle.turnRight()
+                TurtleTurnRight()
             else
-                turtle.turnLeft()
+                TurtleTurnLeft()
+                completedcol = 0
                 DecideCancel(timerest)
                 TurtleTill()
                 LoopPath = TurtleForward()
                 DecideCancel(timerest)
-                turtle.turnLeft()
+                TurtleTurnLeft()
             end
+            if row == 1 then
+                y = y - 1
+            end
+            completedrow = row
         else
             break
         end
@@ -370,6 +463,11 @@ function TillSquare(x, y)
         CompactItems()
         TryEmptyChest()
     else
+        if completedrow > 1 then
+            y = y + 1
+            completedcol = completedcol + 1
+        end
+        ReturnOnStop(x,y,completedrow,completedcol)
     end
 end
 
@@ -404,19 +502,19 @@ function PlantSquare(x,y)
             if LoopPath == false then
                 break
             elseif row % 2 == 1 then
-                turtle.turnRight()
+                TurtleTurnRight()
                 DecideCancel(timerest)
                 TurtlePlant()
                 LoopPath = TurtleForward()
                 DecideCancel(timerest)
-                turtle.turnRight()
+                TurtleTurnRight()
             else
-                turtle.turnLeft()
+                TurtleTurnLeft()
                 DecideCancel(timerest)
                 TurtlePlant()
                 LoopPath = TurtleForward()
                 DecideCancel(timerest)
-                turtle.turnLeft()
+                TurtleTurnLeft()
             end
         else
             break
@@ -462,19 +560,19 @@ function FarmSquare(x, y)
             if LoopPath == false then
                 break
             elseif row % 2 == 1 then
-                turtle.turnRight()
+                TurtleTurnRight()
                 DecideCancel(timerest)
                 TurtleSuckBreakPlant()
                 LoopPath = TurtleForward()
                 DecideCancel(timerest)
-                turtle.turnRight()
+                TurtleTurnRight()
             else
-                turtle.turnLeft()
+                TurtleTurnLeft()
                 DecideCancel(timerest)
                 TurtleSuckBreakPlant()
                 LoopPath = TurtleForward()
                 DecideCancel(timerest)
-                turtle.turnLeft()
+                TurtleTurnLeft()
             end
         else
             break
