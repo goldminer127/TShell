@@ -1,4 +1,4 @@
-# TShell BETA 0.1.7
+# TShell BETA 0.1.8
 #### Disclaimer: TShell is currently in development and is in BETA stage. There may be limited functionality and plenty of bugs. If you encounter any bugs or have any suggestions please make an issue!
 
 Do you hate it when you want a turtle to do something, but have to manually code in a program to do the simplest of things? Do you you hate spending long nights debugging code for a minecraft turtle when you could be doing other things? Do you even know how to code? Well do not fear! TShell is here to satisfy your basic turtle needs. It comes with a bunch of modules packed with commands to make your life with turtles easier! If you are already familiar with TShell and just want to skip to how to get it, [press here!](#installation)
@@ -67,10 +67,10 @@ Type: -m (module), -p (program)\
 Reinstalls any module or program.\
 Example: 'turtle reinstall -m farming'
 
-### remove (WIP)
+### remove
 Shortcut: rm\
-Usage: remove \<name>\
-Command currently not available.
+Usage: remove \<type>\ \<name>\
+Removes either an installed module or a program from TShell.
 
 ### restart
 Restarts TShell.
