@@ -1,7 +1,7 @@
 # Modules
 ### Disclaimer: TShell is currently in development and is in BETA stage. There may be limited functionality and plenty of bugs. If you encounter any bugs or have any suggestions please make an issue!
 Modules are what makes TShell useful. Without them you basically have an iPhone without any apps in it, useless, boring, expensive, and rectangle. But like apps on an iPhone, each module provides different functionalities to TShell. They each come with a different set of commands that are suitable for specific tasks.\
-There is currently only 1 module available. Don't worry, more will show up soon!\
+There is currently only 1 module available. Don't worry, more will show up soon!
 # Available Modules
 * [Farming](#farming-module)
 ## Farming Module
@@ -32,5 +32,6 @@ Tills in a rectanglular pattern. If the width is not specified then the turtle w
 ### version
 Usage: version
 Gets the installed farming module version.\
+\
 \
 Why split functionalities into different modules? Each turtle has their own unique functionality which is dependent on the tool they hold. A farming turtle farms, a mining turtle mines, and a combat turtle hurts things. Unless you really made the turtle angry, a farming turtle would probably not be attacking things. It wouldn’t make sense to give that turtle commands to attack.
