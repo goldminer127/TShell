@@ -1,5 +1,5 @@
 --Shell Info
-Version = "BETA 0.1.7"
+Version = "BETA 0.1.8"
 
 --Available Modules
 local AvailableModules = {"attacking", "farming", "mining", "timber"}
@@ -529,6 +529,30 @@ function Reinstall(input)
     end
 end
 
+function Remove(input)
+    if input[2] == nil or input[3] == nil then
+        print("Type and filename must be provided. One was missing.")
+    elseif input[2] == "module" then
+        if fs.exists("modules/"..input[3]) then
+            print("Removing module",input[3])
+            fs.delete("modules/"..input[3])
+            fs.delete("modules/"..input[3].."version")
+        else
+            print(input[3],"does not exist.")
+        end
+    elseif input[2] == "program" then
+        if fs.exists("program/"..input[3]) then
+            print("Removing program",input[3])
+            fs.delete("program/"..input[3])
+            fs.delete("program/"..input[3].."version")
+        else
+            print(input[3],"does not exist.")
+        end
+    else
+        print("Invalid type specified. Must be module or program.")
+    end
+end
+
 --[[
     All TShell commands. Runs the specified command from Listener.
     Returns true if exit is not called.
@@ -537,7 +561,7 @@ function Turtle(input)
     if input[1] == nil then
         print("Use 'turtle help' to view available commands. Use 'turtle help <command> to read about a specific command.")
     --Default programs
-    elseif input[1] == "default" then
+    elseif input[1] == "default" or input[1] == "-d" then
         local command = ""
         for x = 2,#input,1 do
             command = command .. " " .. input[x]
@@ -550,11 +574,12 @@ function Turtle(input)
     --Help
     elseif input[1] == "help" then
         Help(input)
-    --Modules install
+    --Info
     elseif input[1] == "info" then
         print("TShell Version:", Version)
         print("Created by goldminer127")
         print("Github: https://github.com/goldminer127")
+    --Install
     elseif (input[1] == "install") or (input[1] == "-i") then
         Install(input)
     --Modules
@@ -566,6 +591,9 @@ function Turtle(input)
     --Reinstall
     elseif input[1] == "reinstall" then
         Reinstall(input)
+    --remove
+    elseif input[1] == "remove" then
+        Remove(input)
     --Restart
     elseif input[1] == "restart" then
         Restart()
