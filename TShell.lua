@@ -329,7 +329,8 @@ function Install(input)
                     print("Confirm installation (y/n)")
                     response = read()
                     if response == "y" then
-                        InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. input[3] .. ".lua", input[3])
+                        local moduleName = input[3]
+                        InstallModule("https://raw.githubusercontent.com/goldminer127/TShell/master/modules/" .. moduleName .. ".lua",moduleName)
                         break
                     elseif response == "n" then
                         print("Installation cancelled.")
