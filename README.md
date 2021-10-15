@@ -60,7 +60,7 @@ Manages modules or programs installed onto TShell.\
 Examples: 'turtle modules update module farming'\
           'turtle modules -rm farming'
 
-### Reinstall
+### reinstall
 Shortcut: -r\
 Usage: reinstall \<type> \<name>\
 Type: -m (module), -p (program)\
