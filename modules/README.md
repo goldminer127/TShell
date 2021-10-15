@@ -3,7 +3,7 @@
 Modules are what makes TShell useful. Without them you basically have an iPhone without any apps in it, useless, boring, expensive, and rectangle. But like apps on an iPhone, each module provides different functionalities to TShell. They each come with a different set of commands that are suitable for specific tasks.\
 There is currently only 1 module available. Don't worry, more will show up soon!\
 # Available Modules
-* [Farming](#farming)
+* [Farming](#farming-module)
 ## Farming Module
 Provides commands for farming functionality.\
 __Syntax: 'farming'__
