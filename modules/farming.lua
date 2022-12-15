@@ -1,208 +1,178 @@
---Table used to hold all functions
+--Imports
+local modules = require("modules/functions")
+
+--Headers
 local farming = {}
 
 --Module info
-Version = "BETA 0.1.3"
+Version = "BETA 0.1.4"
 IsStable = true
 
 --Globals
 DoingTask = false
-LoopPath = true
-LoopPathAgain = true
-Direction = 1 --1 = front, 2 = right, 3 = back, 4 = left
 
---Returns string (version)
-function farming.GetVersion()
+
+--Retrieve module info
+function farming.getVersion()
     return Version
 end
 
---Returns bool
-function farming.GetStability()
+function farming.getStability()
     return IsStable
 end
 
---Same as TShell format
-function Format(string1, string2, numSpaces)
-    local spaces = ""
-    if #string1 + #string2 < numSpaces then
-        local neededSpaces = numSpaces - (#string1 + #string2)
-        for addSpaces = 1, neededSpaces do
-            spaces = spaces .. " "
-        end
-    end
-    return string1 .. spaces .. string2
-end
+--[[ --Farming Functions-- ]]
 
---Module Functions
+--[[ Decide which task is being done ]]
+function decideType(type)
+    if type == 1 then
+        return till()
 
-function Help()
-    print(Format("farm", "integrity", 15))
-    print(Format("help", "version", 15))
-    print(Format("till", " ", 15))
-end
+    elseif type == 2 then
+        return plant()
 
-function CommandsHelp(command)
-    if command == "farm" then
-        print("Alias: 'farm'")
-        print("Farm in a rectangular pattern.")
-        print("Example: 'farming farm 3 6'")
-    elseif command == "help" then
-        print("Alias: 'help'")
-        print("Show all farming commands.")
-    elseif command == "till" then
-        print("Alias: 'till'")
-        print("Till all dirt in a rectangular pattern.")
-        print("Example: 'farming till 3 6'")
-    elseif command == "integrity" then
-        print("Alias: 'integrity'")
-        print("Tests if the module is in a stable version.")
-    elseif command == "version" then
-        print("Alias: 'version'")
-        print("Get the version of the module.")
+    elseif type == 3 then
+        return breakSuckReplant()
+
+    else
+        return nil
     end
 end
 
-function TestRefuel()
-    if turtle.getFuelLevel() < 1 then
-        local slot = 1
-        turtle.select(slot)
-        local success = turtle.refuel(1)
-        while success ~= true and slot < 17 do
-            turtle.select(slot)
-            success = turtle.refuel(1)
-            slot = slot + 1
-        end
-        --Decide if wanted or not
-        --if success == false then
-            --print("No fuel available.")
-        --end
-    end
-end 
+--[[ Till tillable blocks. Clears any clearable debris or objects ]]
+function till()
+    local success,blockid = turtle.inspectDown()
 
---Finish and stop task when c is pressed, hard stop task when s is pressed
-function CancelJob()
-    local event, key = os.pullEvent("key")
-    if keys.getName ( key ) == "c" and LoopPathAgain == true then
-        print("Finishing task...")
-        LoopPathAgain = false
-    elseif keys.getName ( key ) == "s" and LoopPath == true then
-        print("Stopping task...")
-        LoopPath = false
-        LoopPathAgain = false
-    end
-end
+    if blockid ~= nil then
+        turtle.digDown()
+        turtle.digDown()
+        turtle.suckDown()
 
---Used to alternate between detecting keypress and continue other functions
-function DecideCancel(time)
-    parallel.waitForAny(CancelJob, function()
-        if LoopPathAgain == true or LoopPath == true then
-            sleep(time)
-        end
-    end)
-end
-
-function TurtleUp()
-    TestRefuel()
-    local success,data = turtle.inspectUp()
-    if data.name ~= nil then
-        turtle.digUp()
-        turtle.suckUp()
-    end
-    local canmove = turtle.up()
-    if canmove == false then
-        print("Cannot move. Either something is blocking the way or fuel is needed.\nType \"resume\" to resume trail or type \"cancel\" to cancel process.")
-        local response = read()
-        if response == "resume" then
-            TurtleUp()
-        elseif response == "cancel" then
-            return false
-        end
-    end
-    return LoopPath --Return true if can move and if task is still going
-end
-
-function TurtleDown()
-    TestRefuel()
-    local success,data = turtle.inspectDown()
-    if data.name ~= nil then
+    else
         turtle.digDown()
         turtle.suckDown()
     end
-    local canmove = turtle.down()
-    if canmove == false then
-        print("Cannot move. Either something is blocking the way or fuel is needed.\nType \"resume\" to resume trail or type \"cancel\" to cancel process.")
-        local response = read()
-        if response == "resume" then
-            TurtleDown()
-        elseif response == "cancel" then
-            return false
-        end
-    end
-    return LoopPath --Return true if can move and if task is still going
 end
 
-function TurtleForward()
-    TestRefuel()
-    local success,data = turtle.inspect()
-    if data.name ~= nil then
-        turtle.dig()
-        turtle.suck()
-        turtle.suckUp()
-    end
-    local canmove = turtle.forward()
-    if canmove == false then
-        print("Cannot move. Either something is blocking the way or fuel is needed.\nType \"resume\" to resume trail or type \"cancel\" to cancel process.")
-        local response = read()
-        if response == "resume" then
-            TurtleForward()
-        elseif response == "cancel" then
-            return false
-        end
-    end
-    return LoopPath --Return true if can move and if task is still going
-end
+--[[ Plants any plantable seeds (currently only vanilla seeds) ]]
+function plant()
+    local data = turtle.getItemDetail()
 
-function TurtleTurnRight()
-    turtle.turnRight()
-    if Direction == 4 then
-        Direction = 1
+    if data ~= nil and (data.name == "minecraft:wheat_seeds" or data.name == "minecraft:potato" or data.name == "minecraft:carrot" or data.name == "minecraft:beetroot_seeds") then
+        turtle.placeDown()
+
     else
-        Direction = Direction + 1
-    end
-end
+        local validseed = false
 
-function TurtleTurnLeft()
-    turtle.turnLeft()
-    if Direction == 1 then
-        Direction = 4
-    else
-        Direction = Direction - 1
-    end
-end
+        for slot = 1,16,1 do
 
-function CompactItems()
-    for slot = 1,16,1 do
-        turtle.select(slot)
-        local data = turtle.getItemDetail()
-        local currentslot = turtle.getSelectedSlot()
-        if data ~= nil then
-            for slot1 = 1,currentslot,1 do
-                if turtle.transferTo(slot1) == true then
-                    break
-                end
+            turtle.select(slot) 
+            data = turtle.getItemDetail()
+
+            if data == nil then --Do nothing if no valid seed is found.
+
+            elseif data.name == "minecraft:wheat_seeds" then 
+                validseed = true 
+                break
+
+            elseif data.name == "minecraft:carrot" then 
+                validseed = true 
+                break
+
+            elseif data.name == "minecraft:potato" then 
+                validseed = true 
+                break
+
+            elseif data.name == "minecraft:beetroot_seeds" then
+                validseed = true 
+                break
             end
+
+        end
+
+        if validseed == false then
+            print("No plantable seed available. Please load inventory with seeds to plant and enter \"resume\". Enter \"cancel\" to cancel planting.")
+
+            local response = read()
+
+            if response == "resume" then
+                plant()
+
+            elseif response == "cancel" then
+                looppath = false
+            end
+
+        else
+            turtle.placeDown()
         end
     end
 end
 
-function TryEmptyChest()
+--[[
+    Harvest fully grown plants (Only vanilla plants currently.
+    Pick up any item on the ground.
+    Replant exact same plant that was harvested. If no seeds of the same plant
+    is available, replant next available seed. If no seeds do not plant anything.
+]]
+function breakSuckReplant()
+    local success,blockid = turtle.inspectDown()
+
+    --Check if block is tilled, if not leave it.
+    --Only harvests fully grown crops
+    if (blockid.name == "minecraft:wheat" or blockid.name == "minecraft:carrots" or blockid.name == "minecraft:potatoes" or blockid.name == "minecraft:beetroots") and blockid.metadata == 7 then
+        turtle.digDown()
+        turtle.suckDown()
+    end
+
+    local selectedid = turtle.getItemDetail()
+    local seedid
+
+    if blockid.name == "minecraft:wheat" then seedid = "minecraft:wheat_seeds"
+    elseif blockid.name == "minecraft:carrots" then seedid = "minecraft:carrot"
+    elseif blockid.name == "minecraft:potatoes" then seedid = "minecraft:potato"
+    elseif blockid.name == "minecraft:beetroots" then seedid = "minecraft:beetroot_seeds"
+    else seedid = "none"
+    end
+
+
+    if selectedid ~= nil and seedid ~= selectedid.name then
+        local slot = 1
+
+        while selectedid ~= nil and seedid ~= selectedid.name and slot < 17 do
+           turtle.select(slot)
+           selectedid = turtle.getItemDetail()
+           slot = slot + 1
+        end
+    end
+
+    if selectedid == nil or seedid ~= selectedid.name then
+        --Decide to keep or not
+        --print("Could not replant same plant, planting next available seed...")
+        plant()
+
+    else
+        turtle.placeDown()
+    end
+end
+
+--[[
+    Attempt to empty inventory into adjacent chest. Empties half the stack of any plantable items.
+    Fully empties non-plantable items.
+    Keeps any fuel items.
+]]
+function tryEmptyChest()
     for x = 1,4,1 do
-        TurtleTurnRight()
+
+        modules.turnRight()
         local success,data = turtle.inspect()
+
         if data.name == "minecraft:chest" then
+
             for slot = 1,16,1 do
+
                 turtle.select(slot)
                 local data = turtle.getItemDetail()
+
                 if data == nil then --Do nothing
                 elseif data.name == "minecraft:wheat_seeds" then turtle.drop(data.count/2)
                 elseif data.name == "minecraft:carrot" then turtle.drop(data.count/2)
@@ -211,461 +181,244 @@ function TryEmptyChest()
                 elseif turtle.refuel(0) then --Do nothing
                 else turtle.drop()
                 end
+
             end
         end
+
     end
 end
 
-function TurtleTill()
-    local success,blockid = turtle.inspectDown()
-    if blockid ~= nil then
-        turtle.digDown()
-        turtle.digDown()
-        turtle.suckDown()
-    else
-        turtle.digDown()
-        turtle.suckDown()
-    end
-end
-
-function TurtlePlant()
-    local data = turtle.getItemDetail()
-    if data ~= nil and (data.name == "minecraft:wheat_seeds" or data.name == "minecraft:potato" or data.name == "minecraft:carrot" or data.name == "minecraft:beetroot_seeds") then
-        turtle.placeDown()
-    else
-        local validseed = false
-        for slot = 1,16,1 do
-            turtle.select(slot) 
-            data = turtle.getItemDetail()
-            if data == nil then --Do nothing
-            elseif data.name == "minecraft:wheat_seeds" then 
-                validseed = true 
-                break
-            elseif data.name == "minecraft:carrot" then 
-                validseed = true 
-                break
-            elseif data.name == "minecraft:potato" then 
-                validseed = true 
-                break
-            elseif data.name == "minecraft:beetroot_seeds" then
-                validseed = true 
-                break
-            end
-        end
-        if validseed == false then
-            print("No plantable seed available. Please load inventory with seeds to plant and enter \"resume\". Enter \"cancel\" to cancel planting.")
-            local response = read()
-            if response == "resume" then
-                TurtlePlant()
-            elseif response == "cancel" then
-                LoopPath = false
-            end
-        else
-            turtle.placeDown()
-        end
-    end
-end
-
-function TurtleSuckBreakPlant()
-    local success,blockid = turtle.inspectDown()
-    --Check if block is tilled, if not leave it.
-    --Done in case there are small dirt platforms or lilypads inside the farm
-    if blockid.name == "minecraft:wheat" or blockid.name == "minecraft:carrots" or blockid.name == "minecraft:potatoes" or blockid.name == "minecraft:beetroots" then
-        turtle.digDown()
-        turtle.suckDown()
-    end
-    local selectedid = turtle.getItemDetail()
-    local seedid
-    if blockid.name == "minecraft:wheat" then seedid = "minecraft:wheat_seeds"
-    elseif blockid.name == "minecraft:carrots" then seedid = "minecraft:carrot"
-    elseif blockid.name == "minecraft:potatoes" then seedid = "minecraft:potato"
-    elseif blockid.name == "minecraft:beetroots" then seedid = "minecraft:beetroot_seeds"
-    else seedid = "none"
-    end
-    if selectedid ~= nil and seedid ~= selectedid.name then
-        local slot = 1
-        while selectedid ~= nil and seedid ~= selectedid.name and slot < 17 do
-           turtle.select(slot)
-           selectedid = turtle.getItemDetail()
-           slot = slot + 1
-        end
-    end
-    if selectedid == nil or seedid ~= selectedid.name then
-        --print("Could not replant plant. No seeds found.")
-    else
-        turtle.placeDown()
-    end
-end
-
-function ReturnOriginalSquare(x, y)
-    LoopPath = true
-    if x % 2 == 1 then
-        TurtleForward()
-        for col = 1,y,1 do
-            if LoopPath ~= false then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-        TurtleTurnRight()
-        for row = 1,x,1 do
-            if LoopPath ~= false then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-        TurtleTurnRight()
-    else
-        TurtleTurnRight()
-        TurtleTurnRight()
-        TurtleForward()
-        TurtleTurnRight()
-        for row = 1,x,1 do
-            if LoopPath ~= false then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-        TurtleTurnRight()
-    end
-end
-
---Return to original position if s is pressed
-function ReturnOnStop(x,y,completedx,completedy)
-    LoopPath = true
-    if Direction == 1 then
-        print(Direction,completedx,y+1)
-        TurtleTurnRight()
-        TurtleTurnRight()
-        for col = 1,completedy,1 do
-            if LoopPath == true then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-        TurtleTurnRight()
-        for row = 1,completedx,1 do
-            if LoopPath == true then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-    elseif Direction == 2 then
-        print(Direction,completedx,y+1)
-        TurtleTurnRight()
-        if completedx % 2 == 1 then
-            for col = 1,y+1,1 do
-                if LoopPath == true then
-                    LoopPath = TurtleForward()
-                else
-                    break
-                end
-            end
-        else
-            TurtleTurnRight()
-            LoopPath = TurtleForward()
-        end
-        TurtleTurnRight()
-        for row = 1,completedx-1,1 do
-            if LoopPath == true then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-    elseif Direction == 3 then
-        print(Direction,y-completedy+1)
-        for col = 1,y-completedy+1,1 do
-            if LoopPath == true then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-        TurtleTurnRight()
-        for row = 1,completedx,1 do
-            if LoopPath == true then
-                LoopPath = TurtleForward()
-            else
-                break
-            end
-        end
-    end
-    while Direction ~= 1 do
-        TurtleTurnRight()
-    end
-    TurtleDown()
-    LoopPath = false
-end
-
-function TillSquare(x, y)
-    local timerest = 0.5 --seconds
+--Perform any rectangular pattern tasks.
+function rectangleTask(x, y, task)
+    local looppath,looproute,cancelrepeat = true,true,false
     local originaly = y
-    local completedrow, completedcol = 0,0
-    LoopPath = true
-    LoopPath = TurtleUp()
+    if task == 3 then
+        cancelrepeat = true
+    end
+
+    looppath,looproute = modules.up(looppath,looproute,cancelrepeat)
+
     for row = 1,x,1 do
-        if LoopPath == true then
-            DecideCancel(timerest)
+
+        if looppath == true then
+
             for col = 1,y,1 do
-                DecideCancel(timerest)
-                if LoopPath == true then
+
+                if looppath == true then
                     --before y is reduced and col is 1, skip breaking tile
                     if y ~= originaly then
-                        TurtleTill()
-                        LoopPath = TurtleForward()
+                        decideType(task)
+                        looppath,looproute = modules.forward(looppath,looproute,cancelrepeat)
+
                     elseif col > 1 then
-                        TurtleTill()
-                        LoopPath = TurtleForward()
+                        decideType(task)
+                        looppath,looproute = modules.forward(looppath,looproute,cancelrepeat)
+
                     else
-                        LoopPath = TurtleForward()
+                        looppath,looproute = modules.forward(looppath,looproute,cancelrepeat)
                     end
+
                     completedcol = col
+
                 else
                     break
                 end
+
             end
-            if LoopPath == false then
+
+            if task == 3 then
+                modules.compactItems()
+            end
+
+            --Starting position is y + 1 the specified dimension. Must subtract 1 to adjust for specified dimensons
+
+            if looppath == false then
                 break
-            elseif row % 2 == 1 then
-                TurtleTurnRight()
+
+            elseif row % 2 == 1 and row ~= x then
+                modules.turnRight()
                 completedcol = 0
-                DecideCancel(timerest)
-                TurtleTill()
-                LoopPath = TurtleForward()
-                DecideCancel(timerest)
-                TurtleTurnRight()
-            else
-                TurtleTurnLeft()
+
+                decideType(task)
+
+                looppath,looproute = modules.forward(looppath,looproute,cancelrepeat)
+                modules.turnRight()
+
+            elseif row ~= x then
+                modules.turnLeft()
                 completedcol = 0
-                DecideCancel(timerest)
-                TurtleTill()
-                LoopPath = TurtleForward()
-                DecideCancel(timerest)
-                TurtleTurnLeft()
-            end
-            if row == 1 then
-                y = y - 1
-            end
-            completedrow = row
-        else
-            break
-        end
-    end
-    if LoopPath then
-        ReturnOriginalSquare(x, y)
-        LoopPath = TurtleDown()
-        CompactItems()
-        TryEmptyChest()
-    else
-        if completedrow > 1 then
-            y = y + 1
-            completedcol = completedcol + 1
-        end
-        ReturnOnStop(x,y,completedrow,completedcol)
-    end
-end
 
-function PlantSquare(x,y)
-    local timerest = 0.5 --seconds
-    local originaly = y
-    LoopPath = true
-    LoopPath = TurtleUp()
-    for row = 1,x,1 do
-        if LoopPath == true then
-            DecideCancel(timerest)
-            for col = 1,y,1 do
-                DecideCancel(timerest)
-                if LoopPath == true then
-                    --before y is reduced and col is 1, skip breaking tile
-                    if y ~= originaly then
-                        TurtlePlant()
-                        LoopPath = TurtleForward()
-                    elseif col > 1 then
-                        TurtlePlant()
-                        LoopPath = TurtleForward()
-                    else
-                        LoopPath = TurtleForward()
-                    end
-                else
-                    break
+                decideType(task)
+
+                looppath,looproute = modules.forward(looppath,looproute,cancelrepeat)
+                modules.turnLeft()
+            end
+
+            if looppath == true then
+                completedrow = row
+
+                if row == 1 then
+                    y = y - 1
                 end
             end
-            if row == 1 then
-                y = y - 1
-            end
-            if LoopPath == false then
-                break
-            elseif row % 2 == 1 then
-                TurtleTurnRight()
-                DecideCancel(timerest)
-                TurtlePlant()
-                LoopPath = TurtleForward()
-                DecideCancel(timerest)
-                TurtleTurnRight()
-            else
-                TurtleTurnLeft()
-                DecideCancel(timerest)
-                TurtlePlant()
-                LoopPath = TurtleForward()
-                DecideCancel(timerest)
-                TurtleTurnLeft()
-            end
+
         else
             break
         end
+
     end
-    if LoopPath then
-        ReturnOriginalSquare(x, y)
-        LoopPath = TurtleDown()
-        CompactItems()
-        TryEmptyChest()
-    else
+
+    looppath,looproute = modules.rectangleReturnOriginalSquare(looppath, looproute, cancelrepeat)
+
+    tryEmptyChest()
+    modules.compactItems()
+
+    return looproute
+end
+
+--[[ --Command Functions-- ]]
+
+function help()
+    print(modules.format("farm", "integrity", 15))
+    print(modules.format("help", "version", 15))
+    print(modules.format("till", " ", 15))
+end
+
+function commandshelp(command)
+    if command == "farm" then
+        print("Alias: 'farm'")
+        print("Farm in a rectangular pattern.")
+        print("Example: 'farming farm 3 6'")
+
+    elseif command == "help" then
+        print("Alias: 'help'")
+        print("Show all farming commands.")
+
+    elseif command == "till" then
+        print("Alias: 'till'")
+        print("Till all dirt in a rectangular pattern.")
+        print("Example: 'farming till 3 6'")
+
+    elseif command == "integrity" then
+        print("Alias: 'integrity'")
+        print("Tests if the module is in a stable version.")
+
+    elseif command == "version" then
+        print("Alias: 'version'")
+        print("Get the version of the module.")
     end
 end
 
-function FarmSquare(x, y)
-    local timerest = 0.5 --seconds
-    local originaly = y
-    LoopPath = true
-    LoopPath = TurtleUp()
-    for row = 1,x,1 do
-        if LoopPath == true then
-            DecideCancel(timerest)
-            for col = 1,y,1 do
-                DecideCancel(timerest)
-                if LoopPath == true then
-                    --before y is reduced and col is 1, skip breaking tile
-                    if y ~= originaly then
-                        TurtleSuckBreakPlant()
-                        LoopPath = TurtleForward()
-                    elseif col > 1 then
-                        TurtleSuckBreakPlant()
-                        LoopPath = TurtleForward()
-                    else
-                        LoopPath = TurtleForward()
-                    end
-                else
-                    break
-                end
-            end
-            if row == 1 then
-                y = y - 1
-            end
-            if LoopPath == false then
-                break
-            elseif row % 2 == 1 then
-                TurtleTurnRight()
-                DecideCancel(timerest)
-                TurtleSuckBreakPlant()
-                LoopPath = TurtleForward()
-                DecideCancel(timerest)
-                TurtleTurnRight()
-            else
-                TurtleTurnLeft()
-                DecideCancel(timerest)
-                TurtleSuckBreakPlant()
-                LoopPath = TurtleForward()
-                DecideCancel(timerest)
-                TurtleTurnLeft()
-            end
-        else
-            break
-        end
-    end
-    if LoopPath then
-        ReturnOriginalSquare(x, y)
-        LoopPath = TurtleDown()
-        CompactItems()
-        TryEmptyChest()
-    else
-    end
-end
+--[[ Read commands from user ]]
+function farming.interpreter(input)
+    local timerest = 60 --seconds
 
-function farming.Interpreter(input)
-    local timerest = 20 --seconds
     if input[1] == "version" then
-        print(farming.GetVersion())
+        print(farming.getVersion())
+
     elseif input[1] == "integrity" or input["-s"] then
         if IsStable == true then
             print("Farming module is in a stable version.")
+
         else
             print("Farming module is in an unstable version.")
         end
+
     elseif input[1] == "help" then
         if input[2] == nil then
-            Help()
+            help()
+
         else
-            CommandsHelp(input[2])
+            commandshelp(input[2])
         end
+
     --Farming things. The pain part
     elseif input[1] ~= nil and DoingTask == true then
         print("Turtle currently doing a task. Stop the task to initiate another.")
+
     elseif input[1] == "till" and input[2] ~= nil and input[3] ~= nil then
         DoingTask = true
         shell.run("clear")
+
         print("Tilling in a a square pattern of", input[2], "x", input[3] .. ". Repeatingly press \"s\" to immediately stop task.")
-        TillSquare(tonumber(input[3]), tonumber(input[2])) --reversed due to for loops
+        rectangleTask(tonumber(input[3]), tonumber(input[2]), 1) --reversed due to for loops
         DoingTask = false
         print("Task completed.")
+
     elseif input[1] == "till" and input[2] ~= nil then
         DoingTask = true
         shell.run("clear")
+
         print("Tilling in a a square pattern of", input[2], "x", input[2] .. ". Repeatingly press \"s\" to immediately stop task.")
-        TillSquare(tonumber(input[2]), tonumber(input[2]))
+        rectangleTask(tonumber(input[2]), tonumber(input[2]), 1)
         DoingTask = false
         print("Task completed.")
-    elseif input[1] == "farm" and input[2] ~= nil and input[3] ~= nil then
-        DoingTask = true
-        LoopPathAgain = true
-        while LoopPathAgain do
-            shell.run("clear")
-            print("Farming in a a square pattern of", input[2], "x", input[3] .. ". Repeatingly press \"c\" to finish and stop task, repeatingly press \"s\" to immediately stop task.")
-            FarmSquare(tonumber(input[3]), tonumber(input[2])) --reversed due to for loops
-            if LoopPathAgain then
-                print("Resting for",timerest,"seconds. Press \"s\" to stop task.")
-                DecideCancel(timerest)
-            end
-        end
-        DoingTask = false
-        print("Task completed.")
-    elseif input[1] == "farm" and input[2] ~= nil then
-        DoingTask = true
-        LoopPathAgain = true
-        while LoopPathAgain do
-            shell.run("clear")
-            print("Farming in a a square pattern of", input[2], "x", input[2] .. ". Repeatingly press \"c\" to finish and stop task, repeatingly press \"s\" to immediately stop task.")
-            FarmSquare(tonumber(input[2]), tonumber(input[2]))
-            if LoopPathAgain then
-                print("Resting for",timerest,"seconds. Press \"s\" to stop task.")
-                DecideCancel(timerest)
-            end
-        end
-        DoingTask = false
-        print("Task completed.")
+
     elseif input[1] == "plant" and input[2] ~= nil and input[3] ~= nil then
         DoingTask = true
         shell.run("clear")
+
         print("Planting in a a square pattern of", input[2], "x", input[3] .. ". Repeatingly \"s\" to immediately stop task.")
-        PlantSquare(tonumber(input[3]), tonumber(input[2])) --reversed due to for loops
+        rectangleTask(tonumber(input[3]), tonumber(input[2]), 2) --reversed due to for loops
         DoingTask = false
         print("Task completed.")
+
     elseif input[1] == "plant" and input[2] ~= nil then
         DoingTask = true
         shell.run("clear")
+
         print("Planting in a a square pattern of", input[2], "x", input[2] .. ". Repeatingly \"s\" to immediately stop task.")
-        PlantSquare(tonumber(input[2]), tonumber(input[2])) --reversed due to for loops
+        rectangleTask(tonumber(input[2]), tonumber(input[2]), 2) --reversed due to for loops
         DoingTask = false
         print("Task completed.")
+
+    elseif input[1] == "farm" and input[2] ~= nil and input[3] ~= nil then
+        DoingTask = true
+        local looproute = true
+
+        while looproute do
+
+            shell.run("clear")
+
+            print("Farming in a a square pattern of", input[2], "x", input[3] .. ". Repeatingly press \"c\" to finish and stop task, repeatingly press \"s\" to immediately stop task.")
+            looproute = rectangleTask(tonumber(input[3]), tonumber(input[2]), 3) --reversed due to for loops
+
+            if looproute then
+                print("Resting for",timerest,"seconds. Press \"s\" to stop task.")
+                looproute = modules.decideCancel(timerest, nil, looproute)
+            end
+            
+        end
+
+        DoingTask = false
+        print("Task completed.")
+
+    elseif input[1] == "farm" and input[2] ~= nil then
+        DoingTask = true
+        local looproute = true
+
+        while looproute do
+
+            shell.run("clear")
+            print("Farming in a a square pattern of", input[2], "x", input[2] .. ". Repeatingly press \"c\" to finish and stop task, repeatingly press \"s\" to immediately stop task.")
+            looproute = rectangleTask(tonumber(input[2]), tonumber(input[2]), 3)
+
+            if looproute then
+                print("Resting for",timerest,"seconds. Press \"s\" to stop task.")
+                looproute = modules.decideCancel(timerest, nil, looproute)
+            end
+
+        end
+
+        DoingTask = false
+        print("Task completed.")
+
     elseif input[1] == nil then
         print("No command input.")
+
     else
         print("Invalid command. Use 'farming help' to view all commands.")
     end
 end
+
 return farming
